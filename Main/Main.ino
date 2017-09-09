@@ -5,7 +5,8 @@
 #include <ESP8266WebServer.h>
 #include "WiFiManager.h"          //https://github.com/tzapu/WiFiManager
 #include <ESP8266HTTPClient.h>
-
+int buttonState = 0; 
+int readyState = 0;
 void configModeCallback (WiFiManager *myWiFiManager) {
   Serial.println("Entered config mode");
   Serial.println(WiFi.softAPIP());
@@ -16,7 +17,8 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  
+  pinMode(D2, OUTPUT);
+  pinMode(D1, INPUT);
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
@@ -39,11 +41,16 @@ void setup() {
 
   //if you get here you have connected to the WiFi
   Serial.println("connected...yeey :)");
+  readyState = 1;
+  digitalWrite(D2, HIGH);
+}
 
+void makeRequest(){
   HTTPClient http;
   Serial.print("[HTTP] begin...\n");
-  http.begin("http://google.com");
+  http.begin("http://maker.ifttt.com/trigger/button_pressed/with/key/dnZFBpYIBLexQjFcj2zXb33bEQnB5xQaiRrrSEa1-_s");
   Serial.print("[HTTP] GET...\n");
+  //http.addHeader("Content-Type", "text/plain");
   int httpCode = http.GET();
   if(httpCode > 0) {
      // HTTP header has been send and Server response header has been handled
@@ -58,9 +65,17 @@ void setup() {
        Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
    }
   http.end();
+  digitalWrite(D2, HIGH);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  int previousButtonState = buttonState;
+  buttonState = digitalRead(D1);
+  if(readyState && previousButtonState != buttonState)
+  {
+    digitalWrite(D2, LOW);
+    makeRequest();
+  }
 
 }
